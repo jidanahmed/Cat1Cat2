@@ -8,6 +8,9 @@ flip gun and cat when facing backwards (no more upside down gun)
 add proper main menu screen
 
 add buttons
+
+fix explosions!!
+mabe add explosion class for that?
 */
 
 import java.util.ArrayList;  // the goat
@@ -21,12 +24,16 @@ ArrayList<Wall> walls = new ArrayList<Wall>();
 ArrayList<Wall> wallsToKill = new ArrayList<Wall>();
 
 // final variables used in calculations
-final int CAT_SPEED = 5;  // 12 is good
-final double ROTATION_SPEED = 0.1;  // 0.1 is good
-final double GUN_COOLDOWN_SECONDS = 0.7;  // 0.1 is good
+final int CAT_SPEED = 8;  // 12 is good
+//final double ROTATION_SPEED = 0.1;  // 0.1 is good
+final double GUN_COOLDOWN_SECONDS = 0.2;  // 0.1 is good
 final int BULLET_SPEED = 18;  // 18 is good
-final int BULLET_BOUNCES = 3;  // 3 is good
-final int CAT_HITBOX_RADIUS = 40;
+final int BULLET_BOUNCES = 20;  // 3 is good
+final int CAT_HITBOX_RADIUS = 45;
+final int JUMP_HEIGHT = 300;
+final int GRAVITY = 1;
+final int INITIAL_JUMP_VELOCITY = -(int)Math.sqrt(2*GRAVITY*JUMP_HEIGHT);
+//final int TIME_TO_APEX = INITIAL_JUMP_VELOCITY/GRAVITY;
 
 // keyboard controls
 private char P1U = 'w';  // 0
@@ -43,11 +50,18 @@ private char P2R = 'l';  // 10
 private char P2S = ',';  // 11
 private char P2CW = ']';  // 12
 private char P2CCW = '[';  // 13
-private char PAUSE = ' ';  // 14
+private char PAUSE = ' '; 
+private char RESTART = 'r';
+
 private byte[] isPressed = new byte[15];  // uldr,shoot,cw,ccw
 private char[] controls = new char[]{P1U,P1L,P1D,P1R,P1S,P1CW,P1CCW,P2U,P2L,P2D,P2R,P2S,P2CW,P2CCW};
 
+// used in wallbuilder
 private boolean mouseDown;
+
+// used in drawHealths
+private PImage player1Icon;
+private PImage player2Icon;
 
 // explosion!!!
 private Gif explosion;
@@ -129,6 +143,7 @@ final class Cat extends Entity {
   private int health;
   private long lastShot;
   private PImage gunSprite;
+  private boolean isOnGround;
 
   // constructor
   Cat(int x, int y, String spritePath, String gunPath, double angle) {
@@ -148,10 +163,16 @@ final class Cat extends Entity {
   PImage getGunSprite() {
     return gunSprite;
   }
+  boolean isOnGround() {
+    return isOnGround;
+  }
 
   // setters
   void setLastShot(long newTime) {
     lastShot = newTime;
+  }
+  void setIsOnGround(boolean b) {
+    isOnGround = b;
   }
 
   // methods
@@ -292,6 +313,7 @@ void renderEntity(Bullet bullet) {
 
 //===========================================================================================================================
 //=====HANDLERS=====
+// bullet handler, pretty simple
 void handleBullets() {
   for (Bullet bullet : bullets) {
     // rendering
@@ -326,18 +348,26 @@ void handleBullets() {
   }
   bulletsToKill.clear();  // might as well save on space
 }
-
+// cat handler, bit harder cause of jumping
 void handleCats() {
   for (Cat cat : cats) {
     // rendering
     renderEntity(cat);
+    // acceleration to change velocity
+    cat.setYVel(cat.getYVel()+GRAVITY);    //RAH
+    // collision
+    if (isInWall(cat.getXPos() + ((cat.getXVel()<0)?-1:1)*CAT_HITBOX_RADIUS + cat.getXVel(),cat.getYPos())){  // x collision
+      cat.setXVel(0);
+    }
+    cat.setIsOnGround(false);
+    if (isInWall(cat.getXPos(),cat.getYPos() + ((cat.getYVel()<0)?-1:1)*CAT_HITBOX_RADIUS + cat.getYVel())){  // y collision
+      if (cat.getYVel()>0){cat.setIsOnGround(true);}
+      cat.setYVel(0);
+    }
     // movement
-      if (! isInWall(cat.getXPos() + ((cat.getXVel()<0)?-1:1)*CAT_HITBOX_RADIUS + cat.getXVel(),cat.getYPos())){  // x collision
-        cat.setXPos(cat.getXPos()+cat.getXVel());
-      }
-      if (! isInWall(cat.getXPos(),cat.getYPos() + ((cat.getYVel()<0)?-1:1)*CAT_HITBOX_RADIUS + cat.getYVel())){  // y collision
-        cat.setYPos(cat.getYPos()+cat.getYVel());
-      }
+    cat.setXPos(cat.getXPos()+cat.getXVel());
+    cat.setYPos(cat.getYPos()+cat.getYVel());
+
     // death conditions
     if (cat.getXPos()<0 || cat.getXPos()>width || cat.getYPos()<0 || cat.getYPos()>height) {cat.takeDamage(cat.getHealth());}
     if (cat.getHealth() <= 0) { catsToKill.add(cat); }
@@ -393,22 +423,29 @@ void removeWallAt(int x, int y) {
 //===========================================================================================================================
 //=====HANDLE KEYPRESSES=====
 // update isPressed
-void keyPressed() {for (int i = 0; i<controls.length; i++) {if (key == controls[i]) {isPressed[i] = 1;}}}
-void keyReleased() {for (int i = 0; i<controls.length; i++) {if (key == controls[i]) {isPressed[i] = 0;}}  if(key==PAUSE){gameState = ((gameState==2)?1:2);}}
+void keyPressed() {for (int i = 0; i<controls.length; i++) {if (key == controls[i]) {isPressed[i] = 1;}}
+  if (key == controls[0] && player1.isOnGround()) {player1.setYVel(INITIAL_JUMP_VELOCITY);}
+  if (key == controls[7] && player2.isOnGround()) {player2.setYVel(INITIAL_JUMP_VELOCITY);}
+  if (key == controls[4] && player1.getHealth()>0) {player1.shoot();}
+  if (key == controls[11] && player2.getHealth()>0) {player2.shoot();}
+  if (key == PAUSE) {gameState = ((gameState==2)?1:2);}  // pause and unpause
+  if (key == RESTART) {startGame();}  // restart game
+}
+void keyReleased() {for (int i = 0; i<controls.length; i++) {if (key == controls[i]) {isPressed[i] = 0;}}}
 void handleKeyboard() {
   // player1 wasda shoot
-  player1.setYVel(0);
+  //player1.setYVel(0);
   player1.setXVel(0);
-  if (isPressed[0]==1 && !(isPressed[1]==1 || isPressed[3]==1)) {  // w
-    player1.setYVel(-CAT_SPEED);  
+  if (isPressed[0]==1 && !(isPressed[1]==1 || isPressed[3]==1)) {  // w, used for jumping now
+    //player1.setYVel(-CAT_SPEED);  
     player1.setAngle(-PI/2);
   }
   if (isPressed[1]==1 && !(isPressed[0]==1 || isPressed[2]==1)) {  // a
     player1.setXVel(-CAT_SPEED);  
     player1.setAngle(PI);
   }
-  if (isPressed[2]==1 && !(isPressed[1]==1 || isPressed[3]==1)) {  // s
-    player1.setYVel(CAT_SPEED);  
+  if (isPressed[2]==1 && !(isPressed[1]==1 || isPressed[3]==1)) {  // s, used for just aiming now
+    //player1.setYVel(CAT_SPEED);  
     player1.setAngle(PI/2);
   }
   if (isPressed[3]==1 && !(isPressed[0]==1 || isPressed[2]==1)) {  // d
@@ -416,43 +453,43 @@ void handleKeyboard() {
     player1.setAngle(0);
   }
   if (isPressed[0]==1 && isPressed[1]==1) {  // wa
-    player1.setYVel(-CAT_SPEED);
+    //player1.setYVel(-CAT_SPEED);
     player1.setXVel(-CAT_SPEED);
     player1.setAngle(-3*PI/4);
   }
   if (isPressed[1]==1 && isPressed[2]==1) {  // as
     player1.setXVel(-CAT_SPEED);  
-    player1.setYVel(CAT_SPEED);  
+    //player1.setYVel(CAT_SPEED);  
     player1.setAngle(3*PI/4);
   }
   if (isPressed[2]==1 && isPressed[3]==1) {  // sd
-    player1.setYVel(CAT_SPEED);  
+    //player1.setYVel(CAT_SPEED);  
     player1.setXVel(CAT_SPEED);  
     player1.setAngle(PI/4);
   }
   if (isPressed[3]==1 && isPressed[0]==1) {  // dw
     player1.setXVel(CAT_SPEED);  
-    player1.setYVel(-CAT_SPEED);  
+    //player1.setYVel(-CAT_SPEED);  
     player1.setAngle(-PI/4);
   }
-  if (isPressed[4] == 1 && player1.getHealth()>0) {player1.shoot();}  // x
+  //if (isPressed[4] == 1 && player1.getHealth()>0) {player1.shoot();}  // x  , this is acting up for player2 so im migrating this whole shoot system to keypressed
   // ROTATION SYSTEM TURNED OFF FOR NOW.
   //if (isPressed[5] == 1) {player1.setAngle(player1.getAngle()+ROTATION_SPEED);}  // f
   //if (isPressed[6] == 1) {player1.setAngle(player1.getAngle()-ROTATION_SPEED);}  // g
   
   // player2 ijkl shoot
-  player2.setYVel(0);
+  //player2.setYVel(0);
   player2.setXVel(0);
-  if (isPressed[7]==1 && !(isPressed[8]==1 || isPressed[10]==1)) {  // i
-    player2.setYVel(-CAT_SPEED);  
+  if (isPressed[7]==1 && !(isPressed[8]==1 || isPressed[10]==1)) {  // i, used for jumping now
+    //player2.setYVel(-CAT_SPEED);  
     player2.setAngle(-PI/2);
   }
   if (isPressed[8]==1 && !(isPressed[7]==1 || isPressed[9]==1)) {  // j
     player2.setXVel(-CAT_SPEED);  
     player2.setAngle(PI);
   }
-  if (isPressed[9]==1 && !(isPressed[8]==1 || isPressed[10]==1)) {  // k
-    player2.setYVel(CAT_SPEED);  
+  if (isPressed[9]==1 && !(isPressed[8]==1 || isPressed[10]==1)) {  // k, used for just aiming now
+    //player2.setYVel(CAT_SPEED);  
     player2.setAngle(PI/2);
   }
   if (isPressed[10]==1 && !(isPressed[7]==1 || isPressed[9]==1)) {  // l
@@ -460,26 +497,26 @@ void handleKeyboard() {
     player2.setAngle(0);
   }
   if (isPressed[7]==1 && isPressed[8]==1) {  // ij
-    player2.setYVel(-CAT_SPEED);
+    //player2.setYVel(-CAT_SPEED);
     player2.setXVel(-CAT_SPEED);
     player2.setAngle(-3*PI/4);
   }
   if (isPressed[8]==1 && isPressed[9]==1) {  // jk
     player2.setXVel(-CAT_SPEED);  
-    player2.setYVel(CAT_SPEED);  
+    //player2.setYVel(CAT_SPEED);  
     player2.setAngle(3*PI/4);
   }
   if (isPressed[9]==1 && isPressed[10]==1) {  // kl
-    player2.setYVel(CAT_SPEED);  
+    //player2.setYVel(CAT_SPEED);  
     player2.setXVel(CAT_SPEED);  
     player2.setAngle(PI/4);
   }
   if (isPressed[10]==1 && isPressed[7]==1) {  // li
     player2.setXVel(CAT_SPEED);  
-    player2.setYVel(-CAT_SPEED);  
+    //player2.setYVel(-CAT_SPEED);  
     player2.setAngle(-PI/4);
   }
-  if (isPressed[11] == 1 && player2.getHealth()>0) {player2.shoot();}  // ;
+  //if (isPressed[11] == 1 && player2.getHealth()>0) {player2.shoot();}  // ;, this is acting up for player2 so im migrating this whole shoot system to keypressed
   // ROTATION SYSTEM TURNED OFF FOR NOW.
   //if (isPressed[12] == 1) {player2.setAngle(player2.getAngle()+ROTATION_SPEED);}  // [
   //if (isPressed[13] == 1) {player2.setAngle(player2.getAngle()-ROTATION_SPEED);}  // ]
@@ -504,17 +541,20 @@ void handleExplosions(){
 
 
 //===========================================================================================================================
-void startGame(){
-  spawn(new Cat(width/8, height/3, "player1.png", "gun1.png", 0));
+void startGame(){  // also works as "restart" game
+  cats.clear();
+  bullets.clear();
+  walls.clear();
+  spawn(new Cat(width/8, 2*height/3, "player1.png", "gun1.png", 0));
   spawn(new Cat(7*width/8, 2*height/3, "player2.png", "gun1.png", PI));
   player1 = cats.get(0);
   player2 = cats.get(1);
   
   // draw walls
-  buildWall(0,50,0,width);
-  buildWall(height-100,height,0,width);
-  buildWall(0,height,0,50);
-  buildWall(0,height,width-50,width);
+  buildWall(0,125,0,width);  // top
+  buildWall(height-50,height,0,width);  // bottom
+  buildWall(0,height,0,50);  // left
+  buildWall(0,height,width-50,width);  // right
   
   // start game
   gameState = 1;  // unpaused
@@ -527,11 +567,34 @@ void drawBackground(){
   background(color(hueValue, 50, 255));
   hueValue += 0.05;
   if (hueValue > 255) {hueValue = 0;}
-  // healths ()
-  fill(hueValue,255,50);
-  textSize(104); 
-  text(player1.getHealth(), width/3, 4*height/5);
-  text(player2.getHealth(), 2*width/3, 4*height/5);  // text only for now, get health bars later
+}
+
+
+void drawHealths() {
+  // player1
+  rectMode(CORNER);
+  imageMode(CORNER);
+  // player1
+  fill(color(0));  // back
+  rect(50,20,585,85);  // black rectangle
+  image(player1Icon, 55, 25, 75, 75);  // red cat
+  noStroke();
+  fill(color(0,500,100));  // red
+  rect(130,25,500,75);  // red rectangle
+  fill(color(100, 255, 150));
+  rect(130,25,map((float)player1.getHealth(),0,100,0,500),75);  // green dynamic rectangle
+
+  // player2
+  fill(color(0));  // back
+  rect(50+width-685,20,585,85);  // black rectangle
+  image(player2Icon, 55+width-685, 25, 75, 75);  // blue cat
+  noStroke();
+  fill(color(0,500,100));  // red
+  rect(130+width-685,25,500,75);  // red rectangle
+  fill(color(100, 255, 150));
+  rect(130+width-685,25,map((float)player2.getHealth(),0,100,0,500),75);  // green dynamic rectangle
+  rectMode(CENTER);
+  imageMode(CENTER);
 }
 
 void drawMainMenu(){
@@ -545,6 +608,7 @@ void drawGame() {
   handleBullets();
   handleKeyboard();
   handleExplosions();
+  drawHealths();
 }
 
 void drawPauseScreen() {
@@ -552,6 +616,7 @@ void drawPauseScreen() {
   fill(100, 15);
   rect(width/2,height/2,width,height);
   fill(255);
+  textSize(200); 
   text("PAUSED",width/2,height/2);
 }
 
@@ -565,6 +630,8 @@ void setup() {
   colorMode(HSB, 255); 
   textAlign(CENTER);
   explosion = new Gif(this, "explosion.gif");
+  player1Icon = loadImage("player1_icon.jpg");
+  player2Icon = loadImage("player2_icon.jpg");
   explosion.play();
   
   startGame();
@@ -583,9 +650,6 @@ void draw() {
       break;
   }
   //explode(player1);  // not working
-  
-  
-  System.out.println(isInWall(mouseX,mouseY) + " " + walls.size());
 }
 
 
@@ -614,5 +678,4 @@ void mouseReleased(){
        buildWall(Math.min(wallBuilderTop,wallBuilderBottom),Math.max(wallBuilderTop,wallBuilderBottom),Math.min(wallBuilderLeft,wallBuilderRight),Math.max(wallBuilderLeft,wallBuilderRight));
     }
   }
-
 }
