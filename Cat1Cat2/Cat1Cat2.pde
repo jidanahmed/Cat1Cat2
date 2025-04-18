@@ -11,10 +11,16 @@ add buttons
 
 fix explosions!!
 mabe add explosion class for that?
+
+add map loading and saving system
 */
 
 import java.util.ArrayList;  // the goat
-import gifAnimation.*;
+import java.util.Scanner;  // the second goat. used for reading maps.
+import java.io.File;
+import java.io.FileNotFoundException;
+//import java.io.FileWriter;  // save maps
+import gifAnimation.*;  // :(
 
 ArrayList<Cat> cats = new ArrayList<Cat>();
 ArrayList<Bullet> bullets = new ArrayList<Bullet>();
@@ -25,7 +31,7 @@ ArrayList<Wall> wallsToKill = new ArrayList<Wall>();
 
 // final variables used in calculations
 final int CAT_SPEED = 8;  // 12 is good
-//final double ROTATION_SPEED = 0.1;  // 0.1 is good
+final double ROTATION_SPEED = 0.1;  // 0.1 is good
 final double GUN_COOLDOWN_SECONDS = 0.2;  // 0.1 is good
 final int BULLET_SPEED = 18;  // 18 is good
 final int BULLET_BOUNCES = 20;  // 3 is good
@@ -33,7 +39,6 @@ final int CAT_HITBOX_RADIUS = 45;
 final int JUMP_HEIGHT = 300;
 final int GRAVITY = 1;
 final int INITIAL_JUMP_VELOCITY = -(int)Math.sqrt(2*GRAVITY*JUMP_HEIGHT);
-//final int TIME_TO_APEX = INITIAL_JUMP_VELOCITY/GRAVITY;
 
 // keyboard controls
 private char P1U = 'w';  // 0
@@ -41,23 +46,26 @@ private char P1L = 'a';  // 1
 private char P1D = 's';  // 2
 private char P1R = 'd';  // 3
 private char P1S = 'x';  // 4
-private char P1CW = 'g';  // 5
-private char P1CCW = 'f';  // 6
+private char P1CW = 'g';  // 5  // unused
+private char P1CCW = 'f';  // 6  // unused
 private char P2U = 'i';  // 7
 private char P2L = 'j';  // 8
 private char P2D = 'k';  // 9
 private char P2R = 'l';  // 10
 private char P2S = ',';  // 11
-private char P2CW = ']';  // 12
-private char P2CCW = '[';  // 13
+private char SAVEMAP = '-';  // 12  // save map?
+private char LOADMAP = '=';  // 13  // load map?
 private char PAUSE = ' '; 
 private char RESTART = 'r';
 
 private byte[] isPressed = new byte[15];  // uldr,shoot,cw,ccw
-private char[] controls = new char[]{P1U,P1L,P1D,P1R,P1S,P1CW,P1CCW,P2U,P2L,P2D,P2R,P2S,P2CW,P2CCW};
+private char[] controls = new char[]{P1U,P1L,P1D,P1R,P1S,P1CW,P1CCW,P2U,P2L,P2D,P2R,P2S,SAVEMAP,LOADMAP};
 
 // used in wallbuilder
 private boolean mouseDown;
+final String mapPath = "map1.txt";
+PrintWriter output;
+
 
 // used in drawHealths
 private PImage player1Icon;
@@ -367,6 +375,9 @@ void handleCats() {
     // movement
     cat.setXPos(cat.getXPos()+cat.getXVel());
     cat.setYPos(cat.getYPos()+cat.getYVel());
+    
+    // rotation!?!?!?!?
+    cat.setAngle(cat.getAngle()+ROTATION_SPEED);
 
     // death conditions
     if (cat.getXPos()<0 || cat.getXPos()>width || cat.getYPos()<0 || cat.getYPos()>height) {cat.takeDamage(cat.getHealth());}
@@ -424,12 +435,14 @@ void removeWallAt(int x, int y) {
 //=====HANDLE KEYPRESSES=====
 // update isPressed
 void keyPressed() {for (int i = 0; i<controls.length; i++) {if (key == controls[i]) {isPressed[i] = 1;}}
-  if (key == controls[0] && player1.isOnGround()) {player1.setYVel(INITIAL_JUMP_VELOCITY);}
-  if (key == controls[7] && player2.isOnGround()) {player2.setYVel(INITIAL_JUMP_VELOCITY);}
-  if (key == controls[4] && player1.getHealth()>0) {player1.shoot();}
-  if (key == controls[11] && player2.getHealth()>0) {player2.shoot();}
+  if (key == P1U && player1.isOnGround()) {player1.setYVel(INITIAL_JUMP_VELOCITY);}
+  if (key == P2U && player2.isOnGround()) {player2.setYVel(INITIAL_JUMP_VELOCITY);}
+  if (key == P1S && player1.getHealth()>0) {player1.shoot();}
+  if (key == P2S && player2.getHealth()>0) {player2.shoot();}
   if (key == PAUSE) {gameState = ((gameState==2)?1:2);}  // pause and unpause
   if (key == RESTART) {startGame();}  // restart game
+  if (key == SAVEMAP) {saveMap(mapPath);}  // save map
+  if (key == LOADMAP) {loadMap(mapPath);}  // load map
 }
 void keyReleased() {for (int i = 0; i<controls.length; i++) {if (key == controls[i]) {isPressed[i] = 0;}}}
 void handleKeyboard() {
@@ -556,6 +569,9 @@ void startGame(){  // also works as "restart" game
   buildWall(0,height,0,50);  // left
   buildWall(0,height,width-50,width);  // right
   
+  // loadMap
+  loadMap(mapPath);
+  
   // start game
   gameState = 1;  // unpaused
 }
@@ -566,7 +582,7 @@ void drawBackground(){
   // rainbow background
   background(color(hueValue, 50, 255));
   hueValue += 0.05;
-  if (hueValue > 255) {hueValue = 0;}
+  if (hueValue > 255) {hueValue = 255-hueValue;}
 }
 
 
@@ -678,4 +694,36 @@ void mouseReleased(){
        buildWall(Math.min(wallBuilderTop,wallBuilderBottom),Math.max(wallBuilderTop,wallBuilderBottom),Math.min(wallBuilderLeft,wallBuilderRight),Math.max(wallBuilderLeft,wallBuilderRight));
     }
   }
+}
+
+//===========================================================================================================================
+//=====SAVE AND LOAD MAPS=====
+void loadMap(String mapFileName) {
+  try {
+    File myFile = new File(sketchPath(mapFileName));
+    Scanner myScanner = new Scanner(myFile);
+    walls.clear();
+    while (myScanner.hasNextLine()) {
+      String line = myScanner.nextLine();
+      Scanner lineScanner = new Scanner(line);
+      buildWall(parseInt(lineScanner.next()),parseInt(lineScanner.next()),parseInt(lineScanner.next()),parseInt(lineScanner.next()));
+      lineScanner.close();
+    }
+    myScanner.close();
+    hueValue = hueValue+255/2;
+    System.out.println("loaded " + mapPath);
+  }
+  catch (FileNotFoundException e) {
+    System.err.println("Could not find file " + mapFileName + ":" + e.getMessage());
+  }
+}
+
+void saveMap(String mapFileName) {
+  output = createWriter(mapFileName);
+  for (Wall wall : walls) {
+    output.println(wall.getTopY() + " " + wall.getBottomY() + " " + wall.getLeftX() + " " + wall.getRightX());
+  }
+  output.flush(); // Writes the remaining data to the file
+  output.close(); // Finishes the file
+  System.out.println("saved " + mapPath);
 }
