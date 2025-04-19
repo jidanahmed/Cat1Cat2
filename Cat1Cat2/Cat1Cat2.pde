@@ -457,7 +457,7 @@ void keyPressed() {for (int i = 0; i<controls.length; i++) {if (key == controls[
   if (key == '7') {mapPath = "map7.txt"; System.out.println("Selected map 7"); loadMap(mapPath);}  // select map 7
   if (key == '8') {mapPath = "map8.txt"; System.out.println("Selected map 8"); loadMap(mapPath);}  // select map 8
   if (key == '9') {mapPath = "map9.txt"; System.out.println("Selected map 9"); loadMap(mapPath);}  // select map 9
-
+  if (key == '0') {mapPath = "map0.txt"; System.out.println("Selected map 0"); loadMap(mapPath);}  // select map 0
 }
 void keyReleased() {for (int i = 0; i<controls.length; i++) {if (key == controls[i]) {isPressed[i] = 0;}}}
 void handleKeyboard() {
