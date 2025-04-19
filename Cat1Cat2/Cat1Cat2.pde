@@ -34,7 +34,7 @@ final int CAT_SPEED = 8;  // 12 is good
 final double ROTATION_SPEED = 0.1;  // 0.1 is good
 final double GUN_COOLDOWN_SECONDS = 0.2;  // 0.1 is good
 final int BULLET_SPEED = 18;  // 18 is good
-final int BULLET_BOUNCES = 20;  // 3 is good
+final int BULLET_BOUNCES = 10;  // 3 is good
 final int CAT_HITBOX_RADIUS = 45;
 final int JUMP_HEIGHT = 300;
 final int GRAVITY = 1;
@@ -63,7 +63,7 @@ private char[] controls = new char[]{P1U,P1L,P1D,P1R,P1S,P1CW,P1CCW,P2U,P2L,P2D,
 
 // used in wallbuilder
 private boolean mouseDown;
-final String mapPath = "map1.txt";
+private String mapPath = "map1.txt";
 PrintWriter output;
 
 
@@ -315,6 +315,9 @@ void renderEntity(Bullet bullet) {
   translate(bullet.getXPos(), bullet.getYPos()); // move origin to bullet center
   rotate((float) bullet.getAngle());             // rotate the bullet
   image(bullet.getSprite(), 0, 0, 24, 12);       // draw centered at new origin
+  noStroke();
+  if (bullet.getOwner() == player1){fill(0,255,255,30); rect(0,0,24,12);}  // player1 bullet indicator
+  if (bullet.getOwner() == player2){fill(130,255,255,35); rect(0,0,24,12);}  // player2 bullet indicator
   popMatrix();                                    // reset transformation
 }
 // wall does not need a render method because it is so simple!
@@ -326,6 +329,7 @@ void handleBullets() {
   for (Bullet bullet : bullets) {
     // rendering
     renderEntity(bullet);
+
     // movement
     bullet.setXPos(bullet.getXPos()+bullet.getXVel());
     bullet.setYPos(bullet.getYPos()+bullet.getYVel());
@@ -443,6 +447,17 @@ void keyPressed() {for (int i = 0; i<controls.length; i++) {if (key == controls[
   if (key == RESTART) {startGame();}  // restart game
   if (key == SAVEMAP) {saveMap(mapPath);}  // save map
   if (key == LOADMAP) {loadMap(mapPath);}  // load map
+  // map selection
+  if (key == '1') {mapPath = "map1.txt"; System.out.println("Selected map 1"); loadMap(mapPath);}  // select map 1
+  if (key == '2') {mapPath = "map2.txt"; System.out.println("Selected map 2"); loadMap(mapPath);}  // select map 2
+  if (key == '3') {mapPath = "map3.txt"; System.out.println("Selected map 3"); loadMap(mapPath);}  // select map 3
+  if (key == '4') {mapPath = "map4.txt"; System.out.println("Selected map 4"); loadMap(mapPath);}  // select map 4
+  if (key == '5') {mapPath = "map5.txt"; System.out.println("Selected map 5"); loadMap(mapPath);}  // select map 5
+  if (key == '6') {mapPath = "map6.txt"; System.out.println("Selected map 6"); loadMap(mapPath);}  // select map 6
+  if (key == '7') {mapPath = "map7.txt"; System.out.println("Selected map 7"); loadMap(mapPath);}  // select map 7
+  if (key == '8') {mapPath = "map8.txt"; System.out.println("Selected map 8"); loadMap(mapPath);}  // select map 8
+  if (key == '9') {mapPath = "map9.txt"; System.out.println("Selected map 9"); loadMap(mapPath);}  // select map 9
+
 }
 void keyReleased() {for (int i = 0; i<controls.length; i++) {if (key == controls[i]) {isPressed[i] = 0;}}}
 void handleKeyboard() {
