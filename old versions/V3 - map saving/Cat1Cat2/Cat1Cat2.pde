@@ -63,7 +63,7 @@ private char[] controls = new char[]{P1U,P1L,P1D,P1R,P1S,P1CW,P1CCW,P2U,P2L,P2D,
 
 // used in wallbuilder
 private boolean mouseDown;
-private String mapPath = "map1.txt";
+private String mapPath = "maps/map1.txt";
 PrintWriter output;
 
 
@@ -448,16 +448,16 @@ void keyPressed() {for (int i = 0; i<controls.length; i++) {if (key == controls[
   if (key == SAVEMAP) {saveMap(mapPath);}  // save map
   if (key == LOADMAP) {loadMap(mapPath);}  // load map
   // map selection
-  if (key == '1') {mapPath = "map1.txt"; System.out.println("Selected map 1"); loadMap(mapPath);}  // select map 1
-  if (key == '2') {mapPath = "map2.txt"; System.out.println("Selected map 2"); loadMap(mapPath);}  // select map 2
-  if (key == '3') {mapPath = "map3.txt"; System.out.println("Selected map 3"); loadMap(mapPath);}  // select map 3
-  if (key == '4') {mapPath = "map4.txt"; System.out.println("Selected map 4"); loadMap(mapPath);}  // select map 4
-  if (key == '5') {mapPath = "map5.txt"; System.out.println("Selected map 5"); loadMap(mapPath);}  // select map 5
-  if (key == '6') {mapPath = "map6.txt"; System.out.println("Selected map 6"); loadMap(mapPath);}  // select map 6
-  if (key == '7') {mapPath = "map7.txt"; System.out.println("Selected map 7"); loadMap(mapPath);}  // select map 7
-  if (key == '8') {mapPath = "map8.txt"; System.out.println("Selected map 8"); loadMap(mapPath);}  // select map 8
-  if (key == '9') {mapPath = "map9.txt"; System.out.println("Selected map 9"); loadMap(mapPath);}  // select map 9
-  if (key == '0') {mapPath = "map0.txt"; System.out.println("Selected map 0"); loadMap(mapPath);}  // select map 0
+  if (key == '1') {mapPath = "maps/map1.txt"; System.out.println("Selected map 1"); loadMap(mapPath);}  // select map 1
+  if (key == '2') {mapPath = "maps/map2.txt"; System.out.println("Selected map 2"); loadMap(mapPath);}  // select map 2
+  if (key == '3') {mapPath = "maps/map3.txt"; System.out.println("Selected map 3"); loadMap(mapPath);}  // select map 3
+  if (key == '4') {mapPath = "maps/map4.txt"; System.out.println("Selected map 4"); loadMap(mapPath);}  // select map 4
+  if (key == '5') {mapPath = "maps/map5.txt"; System.out.println("Selected map 5"); loadMap(mapPath);}  // select map 5
+  if (key == '6') {mapPath = "maps/map6.txt"; System.out.println("Selected map 6"); loadMap(mapPath);}  // select map 6
+  if (key == '7') {mapPath = "maps/map7.txt"; System.out.println("Selected map 7"); loadMap(mapPath);}  // select map 7
+  if (key == '8') {mapPath = "maps/map8.txt"; System.out.println("Selected map 8"); loadMap(mapPath);}  // select map 8
+  if (key == '9') {mapPath = "maps/map9.txt"; System.out.println("Selected map 9"); loadMap(mapPath);}  // select map 9
+  if (key == '0') {mapPath = "maps/map0.txt"; System.out.println("Selected map 0"); loadMap(mapPath);}  // select map 0
 }
 void keyReleased() {for (int i = 0; i<controls.length; i++) {if (key == controls[i]) {isPressed[i] = 0;}}}
 void handleKeyboard() {
