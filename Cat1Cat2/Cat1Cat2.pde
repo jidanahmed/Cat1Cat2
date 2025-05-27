@@ -22,7 +22,7 @@ final int GAME_SCREEN = 2;
 int screen = MAIN_MENU_SCREEN;
 
 final int CAT_SPEED = 8;
-final float GUN_ROTATION_SPEED = 0.03;
+final float GUN_ROTATION_SPEED = 0.05;
 final PVector GRAVITY = new PVector(0,0.8);
 final PVector JUMP_VEL = new PVector(0,-18);
 final int TERM_VEL_VAL = 30;
@@ -197,9 +197,11 @@ class Cat extends Entity {
       rotate(angle-0.15);
       image(gunSprite,75,25,100,50);
       
-      // rotate gun
-      angle += GUN_ROTATION_SPEED;
+      //// rotate gun
+      //angle += GUN_ROTATION_SPEED;
       if (angle > TWO_PI) {angle = 0;}
+      if (angle < 0) {angle = TWO_PI + angle;}
+
     popMatrix();
     popStyle();
   }
@@ -367,7 +369,7 @@ class Bullet extends Entity {
       rectMode(CENTER);
       
       rotate(angle);
-      rect(0,0,size.x,size.y);  // represents hitbox?
+      //rect(0,0,size.x,size.y);  // represents hitbox?
       image(sprite,0,0,size.x,size.y);
       
     popStyle();
@@ -447,32 +449,37 @@ void handleWalls() {
   wallsToKill.clear();
 }
 
+// keyboard controls
 void handleKeyboardMovement() {
   player1.vel.x = 0;
   player2.vel.x = 0;
   
-  if (keys[0]) { player1.angle = 3*HALF_PI; player1.jump(); }
-  if (keys[1]) { player1.angle = PI; player1.vel.x = velLeft.x; }
-  if (keys[2]) { player1.angle = HALF_PI; }
-  if (keys[3]) { player1.angle = 0; player1.vel.x = velRight.x; }
-  if (keys[0] && keys[1]) { player1.angle = 5*QUARTER_PI; }
-  if (keys[1] && keys[2]) { player1.angle = 3*QUARTER_PI; }
-  if (keys[2] && keys[3]) { player1.angle = QUARTER_PI; }
-  if (keys[3] && keys[0]) { player1.angle = 7*QUARTER_PI; }
-  if (keys[4]) { player1.shoot(); }
+  if (keys[0]) { player1.angle = 3*HALF_PI; player1.jump(); }  // w
+  if (keys[1]) { player1.angle = PI; player1.vel.x = velLeft.x; }  // a
+  if (keys[2]) { player1.angle = HALF_PI; }  // s
+  if (keys[3]) { player1.angle = 0; player1.vel.x = velRight.x; }  // d
+  if (keys[0] && keys[1]) { player1.angle = 5*QUARTER_PI; }  // wa
+  if (keys[1] && keys[2]) { player1.angle = 3*QUARTER_PI; }  // as
+  if (keys[2] && keys[3]) { player1.angle = QUARTER_PI; }  // sd
+  if (keys[3] && keys[0]) { player1.angle = 7*QUARTER_PI; }  // dw
+  if (keys[4]) { player1.shoot(); }  // x
+  if (keys[10]) { player1.angle += GUN_ROTATION_SPEED; }  // e
+  if (keys[11]) { player1.angle -= GUN_ROTATION_SPEED; }  // q
   
-  if (keys[5]) { player2.angle = 3*HALF_PI; player2.jump(); }
-  if (keys[6]) { player2.angle = PI; player2.vel.x = velLeft.x; }
-  if (keys[7]) { player2.angle = HALF_PI; }
-  if (keys[8]) { player2.angle = 0; player2.vel.x = velRight.x; }
-  if (keys[5] && keys[6]) { player2.angle = 5*QUARTER_PI; }
-  if (keys[6] && keys[7]) { player2.angle = 3*QUARTER_PI; }
-  if (keys[7] && keys[8]) { player2.angle = QUARTER_PI; }
-  if (keys[8] && keys[5]) { player2.angle = 7*QUARTER_PI; }
-  if (keys[9]) { player2.shoot(); }
+  if (keys[5]) { player2.angle = 3*HALF_PI; player2.jump(); }  // w
+  if (keys[6]) { player2.angle = PI; player2.vel.x = velLeft.x; }  // a
+  if (keys[7]) { player2.angle = HALF_PI; }  // s
+  if (keys[8]) { player2.angle = 0; player2.vel.x = velRight.x; }  // d
+  if (keys[5] && keys[6]) { player2.angle = 5*QUARTER_PI; }  // wa
+  if (keys[6] && keys[7]) { player2.angle = 3*QUARTER_PI; }  // as
+  if (keys[7] && keys[8]) { player2.angle = QUARTER_PI; }  // sd
+  if (keys[8] && keys[5]) { player2.angle = 7*QUARTER_PI; }  // dw
+  if (keys[9]) { player2.shoot(); }  // ,
+  if (keys[12]) { player2.angle += GUN_ROTATION_SPEED; }  // u
+  if (keys[13]) { player2.angle -= GUN_ROTATION_SPEED; }  // o
 }
 /*===KEYBOARD INTERPRETER===*/
-boolean[] keys = new boolean[10];  // wasdxijkl,
+boolean[] keys = new boolean[20];  // wasdxijkl,
 
 void keyPressed() {
   setKeyPressed(key, true);
@@ -481,8 +488,10 @@ void keyPressed() {
     case 'r' :
       resetGame();
       break;
+    case ' ' :
+      // TODO: ADD PAUSING
+      break;
   }
-  // Pause Button
   
   // Map Selection TODO: make this only available on a map selection screen, add a button class.
 }
@@ -523,6 +532,18 @@ void setKeyPressed(char myKey, boolean isPressed) {  // SET CONTROLS HERE
     case ',' :
       keys[9] = isPressed;
       break;
+    case 'e' :
+      keys[10] = isPressed;
+      break;
+    case 'q' :
+      keys[11] = isPressed;
+      break;
+    case 'o' :
+      keys[12] = isPressed;
+      break;
+    case 'u' :
+      keys[13] = isPressed;
+      break;
   }
 }
 
@@ -560,7 +581,7 @@ void handleWallBuilder() {
   if (mouseDown) {
     pushStyle();
     rectMode(CORNERS);
-    noFill();
+    fill(hueValue, 10);
     rect(wallBuilderCorner1.x,wallBuilderCorner1.y,mouseX,mouseY);
     popStyle();
   }
