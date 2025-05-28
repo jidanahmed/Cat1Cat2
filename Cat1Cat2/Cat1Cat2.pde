@@ -19,7 +19,8 @@ final int MAIN_MENU_SCREEN = 0;
 final int SELECT_SCREEN = 1;
 final int GAME_SCREEN = 2;
 
-int screen = MAIN_MENU_SCREEN;
+// default screen
+int screen = 2;
 
 final int CAT_SPEED = 8;
 final float GUN_ROTATION_SPEED = 0.05;
@@ -56,6 +57,9 @@ PImage gun2Sprite;
 PImage bullet1Sprite;
 PImage bullet2Sprite;
 
+PImage mainMenuImage;
+
+
 /*===WALL BUILDER===*/
 boolean wallBuilderActive = false;
 boolean mouseDown = false;
@@ -83,6 +87,9 @@ void setup() {
   // bullets
   bullet1Sprite = loadImage("sprites/bullet1.png");
   bullet2Sprite = loadImage("sprites/bullet2.png");
+  
+  // main menu
+  mainMenuImage = loadImage("sprites/main_menu.png");
   
   // sets up game
   resetGame();
@@ -117,6 +124,7 @@ void tickGame() {
   handleWalls();
   handleWallBuilder();
   handleKeyboardMovement();
+  displayHealthBars();
   // TODO add ui updating (health and score and stuff)
 }
 
@@ -129,12 +137,57 @@ void updateColor() {
   popStyle();
 }
 
+void displayHealthBars() {
+  pushStyle(); pushMatrix(); rectMode(CORNERS);
+
+  // player1 health
+  fill(255,0,0); stroke(0); strokeWeight(4);
+  rect(width/32,height/32,14*width/32,height/10);
+  fill(0,255,0);
+  rect(width/32,height/32,map(player1.health,0,100,width/32,14*width/32),height/10);
+
+  
+  //player 2 health
+  fill(255,0,0);
+  rect(width-width/32,height/32,width-(14*width/32),height/10);
+  fill(0,255,0);
+  rect(width-width/32,height/32,map(player2.health,0,100,width-width/32,width-(14*width/32)),height/10);
+  
+  popMatrix(); popStyle();
+}
+
+void tickMainMenu() {
+  pushStyle();
+  imageMode(CORNERS);
+  image(mainMenuImage, 0, 0, width, height);
+  
+  //handleButtons();
+  popStyle();
+}
+
+void tickSelectScreen() {
+  updateColor();
+  fill(0);
+  text("test select screen", 600, 600);
+}
+
 void draw() {
 
   // TODO add switch later for different screens
-  tickGame();
-  
-  printTests();
+  switch (screen) {
+    case MAIN_MENU_SCREEN :
+      tickMainMenu();
+      break;
+    case SELECT_SCREEN :
+      tickSelectScreen();
+      break;
+    case GAME_SCREEN :
+      tickGame();
+      break;
+  }
+  if (debugMode) {
+    printTests();
+  }
 }
 
 /*===CLASSES===*/
@@ -206,11 +259,13 @@ class Cat extends Entity {
     popStyle();
   }
   void shoot() {
-    if (millis() - lastShot > reloadTime*1000) {
-      Bullet b = new Bullet(bulletName, this);
-      angle -= GUN_ROTATION_SPEED*40;
-      lastShot = millis();
-      bullets.add(b);
+    if (health > 0) {
+      if (millis() - lastShot > reloadTime*1000) {
+        Bullet b = new Bullet(bulletName, this);
+        //angle -= GUN_ROTATION_SPEED*40;  // recoil
+        lastShot = millis();
+        bullets.add(b);
+      }
     }
   }
   void setGun(String gunName) {
@@ -294,14 +349,14 @@ class Bullet extends Entity {
     switch (bulletName) {
       case "bullet1":
         vel.setMag(12);
-        damageAmount = 1;
+        damageAmount = 5;
         bouncesLeft = 3;
         sprite = bullet1Sprite;
         size = new PVector(50,20);
         break;
       case "bullet2":
         vel.setMag(300);
-        damageAmount = 2;
+        damageAmount = 10;
         bouncesLeft = 6;
         sprite = bullet2Sprite;
         size = new PVector(100,20);
@@ -354,7 +409,15 @@ class Bullet extends Entity {
       }
     }
     for (Cat cat : cats) {
+      float left   = cat.pos.x - cat.size.x / 2;
+      float right  = cat.pos.x + cat.size.x / 2;
+      float top    = cat.pos.y - cat.size.y / 2;
+      float bottom = cat.pos.y + cat.size.y / 2;
       
+      if (pos.x > left && pos.x < right && pos.y > top && pos.y < bottom) {
+        cat.health -= damageAmount;
+        bulletsToKill.add(this);
+      }
     }
   }
   
@@ -454,27 +517,71 @@ void handleKeyboardMovement() {
   player1.vel.x = 0;
   player2.vel.x = 0;
   
-  if (keys[0]) { player1.angle = 3*HALF_PI; player1.jump(); }  // w
-  if (keys[1]) { player1.angle = PI; player1.vel.x = velLeft.x; }  // a
-  if (keys[2]) { player1.angle = HALF_PI; }  // s
-  if (keys[3]) { player1.angle = 0; player1.vel.x = velRight.x; }  // d
-  if (keys[0] && keys[1]) { player1.angle = 5*QUARTER_PI; }  // wa
-  if (keys[1] && keys[2]) { player1.angle = 3*QUARTER_PI; }  // as
-  if (keys[2] && keys[3]) { player1.angle = QUARTER_PI; }  // sd
-  if (keys[3] && keys[0]) { player1.angle = 7*QUARTER_PI; }  // dw
+  if (keys[0]) {  // w
+    //player1.angle = 3*HALF_PI;
+    player1.jump();
+  }
+  if (keys[1]) {  // a
+    //player1.angle = PI;
+    if (Math.cos(player1.angle) > 0) {
+      player1.angle = PI - player1.angle;
+    }
+    player1.vel.x = velLeft.x;
+  }
+  if (keys[2]) {  // s
+    //player1.angle = HALF_PI;
+  }
+  if (keys[3]) {  // d
+    //player1.angle = 0;
+    if (Math.cos(player1.angle) < 0) {
+      player1.angle = PI - player1.angle;
+    }
+    player1.vel.x = velRight.x;
+  }
+  if (keys[0] && keys[1]) {  // wa
+    //player1.angle = 5*QUARTER_PI;
+  }
+  if (keys[1] && keys[2]) {  // as
+    //player1.angle = 3*QUARTER_PI;
+  }
+  if (keys[2] && keys[3]) {  // sd
+    //player1.angle = QUARTER_PI;
+  }
+  if (keys[3] && keys[0]) {  // dw
+    //player1.angle = 7*QUARTER_PI;
+  }
   if (keys[4]) { player1.shoot(); }  // x
   if (keys[10]) { player1.angle += GUN_ROTATION_SPEED; }  // e
   if (keys[11]) { player1.angle -= GUN_ROTATION_SPEED; }  // q
   
-  if (keys[5]) { player2.angle = 3*HALF_PI; player2.jump(); }  // w
-  if (keys[6]) { player2.angle = PI; player2.vel.x = velLeft.x; }  // a
-  if (keys[7]) { player2.angle = HALF_PI; }  // s
-  if (keys[8]) { player2.angle = 0; player2.vel.x = velRight.x; }  // d
-  if (keys[5] && keys[6]) { player2.angle = 5*QUARTER_PI; }  // wa
-  if (keys[6] && keys[7]) { player2.angle = 3*QUARTER_PI; }  // as
-  if (keys[7] && keys[8]) { player2.angle = QUARTER_PI; }  // sd
-  if (keys[8] && keys[5]) { player2.angle = 7*QUARTER_PI; }  // dw
-  if (keys[9]) { player2.shoot(); }  // ,
+  if (keys[5]) {
+    //player2.angle = 3*HALF_PI;
+    player2.jump();
+  }  // i
+  if (keys[6]) {  // j
+    //player2.angle = PI;
+    player2.vel.x = velLeft.x;
+  }
+  if (keys[7]) {  // k
+    //player2.angle = HALF_PI;
+  }
+  if (keys[8]) {  // l
+    //player2.angle = 0;
+    player2.vel.x = velRight.x;
+  }
+  if (keys[5] && keys[6]) {  // ij
+    //player2.angle = 5*QUARTER_PI;
+  }
+  if (keys[6] && keys[7]) {  // jk
+    //player2.angle = 3*QUARTER_PI;
+  }
+  if (keys[7] && keys[8]) {  // kl
+    //player2.angle = QUARTER_PI;
+  }
+  if (keys[8] && keys[5]) {  // li
+    //player2.angle = 7*QUARTER_PI;
+  }
+  if (keys[9]) {player2.shoot(); }  // ,
   if (keys[12]) { player2.angle += GUN_ROTATION_SPEED; }  // u
   if (keys[13]) { player2.angle -= GUN_ROTATION_SPEED; }  // o
 }
@@ -550,6 +657,8 @@ void setKeyPressed(char myKey, boolean isPressed) {  // SET CONTROLS HERE
 /*===WALL BUILDER===*/
 
 void mousePressed() {
+  if (! debugMode) {return;}
+  
   mouseDown = false;
   boolean removedWall = false;
   for (Wall wall : walls) {
@@ -563,10 +672,11 @@ void mousePressed() {
     mouseDown = true;
     wallBuilderCorner1 = new PVector(mouseX, mouseY);
   }
-  
 }
 
 void mouseReleased() {
+  if (! debugMode) {return;}
+
   if (mouseDown) {
     mouseDown = false;
     wallBuilderCorner2 = new PVector(mouseX, mouseY);
