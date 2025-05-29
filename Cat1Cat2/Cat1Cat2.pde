@@ -11,6 +11,8 @@ ArrayList<Cat> catsToKill = new ArrayList<Cat>();
 ArrayList<Bullet> bulletsToKill = new ArrayList<Bullet>();
 ArrayList<Wall> walls = new ArrayList<Wall>();
 ArrayList<Wall> wallsToKill = new ArrayList<Wall>();
+ArrayList<Button> buttons = new ArrayList<Button>();
+ArrayList<Button> buttonsToKill = new ArrayList<Button>();
 
 /*===CONSTANTS===*/
 boolean debugMode = false;
@@ -20,7 +22,7 @@ final int SELECT_SCREEN = 1;
 final int GAME_SCREEN = 2;
 
 // default screen
-int screen = 2;
+int screen;
 
 final int CAT_SPEED = 8;
 final float GUN_ROTATION_SPEED = 0.05;
@@ -66,6 +68,10 @@ boolean mouseDown = false;
 PVector wallBuilderCorner1;
 PVector wallBuilderCorner2;
 
+/*===BUTTONS===*/
+//Button playButton = new Button("playButton",width*108/1710,height*149/1037 , width*437/1710,height*342/1037);
+Button playButton = new Button("playButton",108,149 , 437,342);
+
 /*===SETUP===*/
 void setup() {
   // set up window
@@ -94,6 +100,22 @@ void setup() {
   // sets up game
   resetGame();
   
+  setScreen(0);
+  
+}
+
+void setScreen(int newScreen) {
+  for (Button button : buttons) { buttonsToKill.add(button); } // clear buttons
+  screen = newScreen;
+  
+  switch (newScreen) {
+    case MAIN_MENU_SCREEN :
+      buttons.add(playButton);
+      break;
+    case SELECT_SCREEN :
+      //buttons.add(playButton);
+      break;
+  }
 }
 
 void resetGame() {
@@ -161,7 +183,7 @@ void tickMainMenu() {
   imageMode(CORNERS);
   image(mainMenuImage, 0, 0, width, height);
   
-  //handleButtons();
+  handleButtons();
   popStyle();
 }
 
@@ -469,6 +491,36 @@ class Wall {
 }
 
 // TODO class Button
+class Button {
+  String name;
+  float top;
+  float bottom;
+  float left;
+  float right;
+  boolean isHovered;
+
+  Button(String n, float x1, float y1, float x2, float y2) {
+    name = n;
+    left = Math.min(x1,x2);
+    right = Math.max(x1,x2);
+    top = Math.min(y1,y2);
+    bottom = Math.max(y1,y2);
+    isHovered = false;
+  }
+  
+  void display() {
+    pushStyle();
+    rectMode(CORNERS);
+    colorMode(HSB,255);
+    fill(color(255, 0, 150));
+    rect(left,top,right,bottom);
+    popStyle();
+  }
+  
+  String toString() {
+    return left + "," + top + " " + right + "," + bottom;
+  }
+}
 
 /*===RAHHHH===*/
 
@@ -585,6 +637,19 @@ void handleKeyboardMovement() {
   if (keys[12]) { player2.angle += GUN_ROTATION_SPEED; }  // u
   if (keys[13]) { player2.angle -= GUN_ROTATION_SPEED; }  // o
 }
+
+void handleButtons() {
+  for (Button button : buttons) { // checks each button for if hovered and does actions
+    button.isHovered = false;
+    if (debugMode) { button.display(); }
+    if (mouseX > button.left && mouseX < button.right && mouseY > button.top && mouseY < button.bottom) {
+      button.isHovered = true;
+    }
+  }
+  // graveyard
+  for (Button button : buttonsToKill) {buttons.remove(button);}
+  buttonsToKill.clear();
+}
 /*===KEYBOARD INTERPRETER===*/
 boolean[] keys = new boolean[20];  // wasdxijkl,
 
@@ -597,6 +662,9 @@ void keyPressed() {
       break;
     case ' ' :
       // TODO: ADD PAUSING
+      break;
+    case '`' :
+      debugMode = !debugMode;
       break;
   }
   
@@ -657,32 +725,56 @@ void setKeyPressed(char myKey, boolean isPressed) {  // SET CONTROLS HERE
 /*===WALL BUILDER===*/
 
 void mousePressed() {
-  if (! debugMode) {return;}
-  
-  mouseDown = false;
-  boolean removedWall = false;
-  for (Wall wall : walls) {
-    if (mouseX > wall.left && mouseX < wall.right && mouseY > wall.top && mouseY < wall.bottom) {
-      wallsToKill.add(wall);
-      removedWall = true;
-      System.out.println("RAHHHH" + millis());
+  if (screen == GAME_SCREEN) {
+    if (! debugMode) {return;}
+    mouseDown = false;
+    boolean removedWall = false;
+    for (Wall wall : walls) {
+      if (mouseX > wall.left && mouseX < wall.right && mouseY > wall.top && mouseY < wall.bottom) {
+        wallsToKill.add(wall);
+        removedWall = true;
+        System.out.println("RAHHHH" + millis());
+      }
+    }
+    if (! removedWall){
+      mouseDown = true;
+      wallBuilderCorner1 = new PVector(mouseX, mouseY);
     }
   }
-  if (! removedWall){
-    mouseDown = true;
-    wallBuilderCorner1 = new PVector(mouseX, mouseY);
-  }
+  
 }
 
 void mouseReleased() {
-  if (! debugMode) {return;}
+  // press button
+  for (Button button : buttons) {
+    if (button.isHovered){   
+      System.out.println("mouseReleeased " + button);
+      setScreen(1);
+      //screen = 1;
+      
+      // TODONOW switch case for every possible button in the game
+      switch (button.name) {
+        case "playButton" :
+          screen = 1;
+          break;
+        case "blahhh" :
+          // rahhhh
+          break;
+      }
+    }
+  }
+  
+  //if (! debugMode) {return;}
+  //else { System.out.println("x"+mouseX+"/"+width + " y"+mouseY+"/"+height);}
 
-  if (mouseDown) {
-    mouseDown = false;
-    wallBuilderCorner2 = new PVector(mouseX, mouseY);
-    
-    if (! wallBuilderCorner1.equals(wallBuilderCorner2)) {
-      walls.add(new Wall(wallBuilderCorner1.x,wallBuilderCorner1.y,wallBuilderCorner2.x,wallBuilderCorner2.y));
+  if (screen == GAME_SCREEN) {
+    if (mouseDown) {
+      mouseDown = false;
+      wallBuilderCorner2 = new PVector(mouseX, mouseY);
+      
+      if (! wallBuilderCorner1.equals(wallBuilderCorner2)) {
+        walls.add(new Wall(wallBuilderCorner1.x,wallBuilderCorner1.y,wallBuilderCorner2.x,wallBuilderCorner2.y));
+      }
     }
   }
 }
@@ -744,6 +836,7 @@ character select screen
 
 void printTests() {
   //System.out.println();
+  System.out.println(playButton.isHovered);
 
 }
 
