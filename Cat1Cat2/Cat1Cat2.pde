@@ -19,6 +19,9 @@ ArrayList<Button> buttonsToKill = new ArrayList<Button>();
 
 /*===CONSTANTS===*/
 boolean debugMode = false;
+boolean scopes = true;
+boolean recoil = false;
+
 boolean paused;
 
 final int MAIN_MENU_SCREEN = 0;
@@ -27,6 +30,7 @@ final int GAME_SCREEN = 2;
 final int VICTORY_SCREEN = 3;
 
 int screen;
+
 
 /*===BUTTONS===*/
 // main menu
@@ -41,7 +45,7 @@ Button[] mapButtons;
 Button mainMenuButton;
 
 final int CAT_SPEED = 8;
-final float GUN_ROTATION_SPEED = 0.1;
+final float GUN_ROTATION_SPEED = 0.05;
 final PVector GRAVITY = new PVector(0,0.8);
 final PVector JUMP_VEL = new PVector(0,-18);
 final int TERM_VEL_VAL = 30;
@@ -426,8 +430,12 @@ class Cat extends Entity {
         // display crown
         image(crownImage,0,-size.y/2, size.x, size.y);
       }
-  
-      rotate(angle-0.15);
+      rotate(angle);
+      if (scopes) {
+        stroke(255,0,0);
+        line(60,0,9000,0);
+      }
+      rotate(-0.15);
       image(gunSprite,75,25,100,50);
       
       //// rotate gun
@@ -453,7 +461,7 @@ class Cat extends Entity {
     if (health > 0) {
       if (millis() - lastShot > reloadTime*1000) {
         Bullet b = new Bullet(bulletName, this);
-        //angle -= GUN_ROTATION_SPEED*40;  // recoil
+        if (recoil) { angle -= .6; } // recoil 
         lastShot = millis();
         bullets.add(b);
         gunshot.amp(0.2);  //quieter
