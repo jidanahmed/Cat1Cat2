@@ -6,7 +6,7 @@ import java.io.FileNotFoundException;
 import processing.sound.*;
 
 
-SoundFile bgm, gunshot, buttonSound, death;
+SoundFile bgm, gunshot, buttonSound, death, explosion;
 
 /*===ARRAYLISTS===*/
 ArrayList<Cat> cats = new ArrayList<Cat>();
@@ -99,11 +99,12 @@ void setup() {
   
   // sounds
   bgm = new SoundFile(this, "audio/background1.mp3");
+  if (Math.random() < 0.25) {bgm = new SoundFile(this, "audio/background2.mp3");}
+  bgm.loop();
   buttonSound = new SoundFile(this, "audio/button.mp3");
   death = new SoundFile(this, "audio/death.mp3");
-  if (Math.random() < 0.25) {bgm = new SoundFile(this, "audio/background2.mp3");}
   gunshot = new SoundFile(this, "audio/gunshot.wav");
-  bgm.loop();
+  explosion = new SoundFile(this, "audio/explosion.mp3");
   
   // resize players
   DEFAULT_SPRITE_SIZE = displayWidth/20;
@@ -732,7 +733,7 @@ class Button {
 /*===HANDLERS===*/
 void handleCats() {
   for (Cat cat : cats) {
-    if (cat.health <= 0) {catsToKill.add(cat); death.play(); }
+    if (cat.health <= 0) {catsToKill.add(cat); explosion.play(); death.play(); }
     if (cat.pos.y>height) {cat.applyForce(GRAVITY.copy().mult(-4));}  //TEST
 
     cat.onGround = false;
