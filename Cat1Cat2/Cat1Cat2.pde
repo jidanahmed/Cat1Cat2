@@ -3,6 +3,11 @@ import java.util.ArrayList;  // the goat
 import java.util.Scanner;
 import java.io.File;
 import java.io.FileNotFoundException;
+import processing.sound.*;
+
+SoundFile bgm;
+SoundFile gunshot;
+SoundFile buttonSound;
 
 /*===ARRAYLISTS===*/
 ArrayList<Cat> cats = new ArrayList<Cat>();
@@ -88,6 +93,13 @@ void setup() {
   windowTitle("Cat1Cat2");
   windowResize(displayWidth, displayHeight-75);
   windowMove(0,-100);
+  
+  // sounds
+  bgm = new SoundFile(this, "audio/background1.mp3");
+  buttonSound = new SoundFile(this, "audio/button.mp3");
+  if (Math.random() < 0.25) {bgm = new SoundFile(this, "audio/background2.mp3");}
+  gunshot = new SoundFile(this, "audio/gunshot.wav");
+  bgm.loop();
   
   // resize players
   DEFAULT_SPRITE_SIZE = displayWidth/20;
@@ -445,20 +457,22 @@ class Cat extends Entity {
         //angle -= GUN_ROTATION_SPEED*40;  // recoil
         lastShot = millis();
         bullets.add(b);
+        gunshot.amp(0.2);  //quieter
+        gunshot.play();  // gunshot sound
       }
     }
   }
   void setGun(String gunName) {  // workhere
     switch (gunName) {
-      case "gun1" :
+      case "gun1" :  // fast but weak
         gunSprite = gun1Sprite;
-        reloadTime = 0.5;
+        reloadTime = 0.2;
         bulletName = "bullet1";
         bulletBounces = 15;
         break;
-      case "gun2" :
+      case "gun2" :  // slow but strong
         gunSprite = gun2Sprite;
-        reloadTime = 0.2;
+        reloadTime = 0.6;
         bulletName = "bullet2";
         bulletBounces = 12;
         break;
@@ -526,20 +540,20 @@ class Bullet extends Entity {
     vel.set(new PVector(1,0));
     vel.rotate(angle);
     
-    switch (bulletName) {
+    switch (bulletName) {  // fast but weak
       case "bullet1":
-        vel.setMag(12);
-        damageAmount = 7;
-        bouncesLeft = 12;
+        vel.setMag(20);
+        damageAmount = 3;
+        bouncesLeft = 8;
         sprite = bullet1Sprite;
         size = new PVector(50,20);
         break;
-      case "bullet2":
-        vel.setMag(30);
-        damageAmount = 2;
-        bouncesLeft = 18;
+      case "bullet2":  // slow but strong
+        vel.setMag(10);
+        damageAmount = 12;
+        bouncesLeft = 12;
         sprite = bullet2Sprite;
-        size = new PVector(100,20);
+        size = new PVector(60,20);
         break;
     }
   }
@@ -935,23 +949,23 @@ void mousePressed() {
 
 void mouseReleased() {
   // press button
-  if (playButton.isHovered){ setScreen(SELECT_SCREEN); } 
+  if (playButton.isHovered){ setScreen(SELECT_SCREEN); buttonSound.play(); } 
   if (backButton.isHovered){ setScreen(MAIN_MENU_SCREEN); }
-  if (map1Button.isHovered){ displayedMap = map1Image; mapSelectedPath = "map1.txt";}
-  if (map2Button.isHovered){ displayedMap = map2Image; mapSelectedPath = "map2.txt";}
-  if (map3Button.isHovered){ displayedMap = map3Image; mapSelectedPath = "map3.txt";}
-  if (map4Button.isHovered){ displayedMap = map4Image; mapSelectedPath = "map4.txt";}
-  if (map5Button.isHovered){ displayedMap = map5Image; mapSelectedPath = "map5.txt";}
-  if (map6Button.isHovered){ displayedMap = map6Image; mapSelectedPath = "map6.txt";}
-  if (map7Button.isHovered){ displayedMap = map7Image; mapSelectedPath = "map7.txt";}
-  if (map8Button.isHovered){ displayedMap = map8Image; mapSelectedPath = "map8.txt";}
-  if (map9Button.isHovered){ displayedMap = map9Image; mapSelectedPath = "map9.txt";}
-  if (map10Button.isHovered){ displayedMap = map10Image; mapSelectedPath = "map10.txt";}
-  if (player1Gun1Button.isHovered){ player1GunSelectSprite = gun1Sprite; player1Gun="gun1"; }
-  if (player1Gun2Button.isHovered){ player1GunSelectSprite = gun2Sprite; player1Gun="gun2"; }
-  if (player2Gun1Button.isHovered){ player2GunSelectSprite = gun1Sprite; player2Gun="gun1"; }
-  if (player2Gun2Button.isHovered){ player2GunSelectSprite = gun2Sprite; player2Gun="gun2"; }
-  if (gameButton.isHovered){ setScreen(GAME_SCREEN); }
+  if (map1Button.isHovered){ displayedMap = map1Image; mapSelectedPath = "map1.txt"; buttonSound.play(); }
+  if (map2Button.isHovered){ displayedMap = map2Image; mapSelectedPath = "map2.txt"; buttonSound.play(); }
+  if (map3Button.isHovered){ displayedMap = map3Image; mapSelectedPath = "map3.txt"; buttonSound.play(); }
+  if (map4Button.isHovered){ displayedMap = map4Image; mapSelectedPath = "map4.txt"; buttonSound.play(); }
+  if (map5Button.isHovered){ displayedMap = map5Image; mapSelectedPath = "map5.txt"; buttonSound.play(); }
+  if (map6Button.isHovered){ displayedMap = map6Image; mapSelectedPath = "map6.txt"; buttonSound.play(); }
+  if (map7Button.isHovered){ displayedMap = map7Image; mapSelectedPath = "map7.txt"; buttonSound.play(); }
+  if (map8Button.isHovered){ displayedMap = map8Image; mapSelectedPath = "map8.txt"; buttonSound.play(); }
+  if (map9Button.isHovered){ displayedMap = map9Image; mapSelectedPath = "map9.txt"; buttonSound.play(); }
+  if (map10Button.isHovered){ displayedMap = map10Image; mapSelectedPath = "map10.txt"; buttonSound.play(); }
+  if (player1Gun1Button.isHovered){ player1GunSelectSprite = gun1Sprite; player1Gun="gun1"; buttonSound.play(); }
+  if (player1Gun2Button.isHovered){ player1GunSelectSprite = gun2Sprite; player1Gun="gun2"; buttonSound.play(); }
+  if (player2Gun1Button.isHovered){ player2GunSelectSprite = gun1Sprite; player2Gun="gun1"; buttonSound.play(); }
+  if (player2Gun2Button.isHovered){ player2GunSelectSprite = gun2Sprite; player2Gun="gun2"; buttonSound.play(); }
+  if (gameButton.isHovered){ setScreen(GAME_SCREEN); buttonSound.play(); }
 
   //if (! debugMode) {return;}
   //else { System.out.println("x"+mouseX+"/"+width + " y"+mouseY+"/"+height);}
