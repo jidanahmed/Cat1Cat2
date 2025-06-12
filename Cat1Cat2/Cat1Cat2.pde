@@ -16,35 +16,23 @@ ArrayList<Button> buttonsToKill = new ArrayList<Button>();
 
 /*===CONSTANTS===*/
 boolean debugMode = false;
+boolean paused;
 
 final int MAIN_MENU_SCREEN = 0;
 final int SELECT_SCREEN = 1;
 final int GAME_SCREEN = 2;
-final int PAUSE_SCREEN = 3;
+final int VICTORY_SCREEN = 3;
 
-// default screen
 int screen;
 
 /*===BUTTONS===*/
 // main menu
 Button playButton;
 // select
-Button map1Button;
-Button map2Button;
-Button map3Button;
-Button map4Button;
-Button map5Button;
-Button map6Button;
-Button map7Button;
-Button map8Button;
-Button map9Button;
-Button map10Button;
-Button player1Gun1Button;
-Button player1Gun2Button;
-Button player2Gun1Button;
-Button player2Gun2Button;
-Button backButton;
-Button gameButton;
+Button map1Button, map2Button, map3Button, map4Button, map5Button, map6Button, map7Button, map8Button, map9Button, map10Button;
+Button player1Gun1Button, player1Gun2Button, player2Gun1Button, player2Gun2Button;
+Button backButton, gameButton;
+Button[] mapButtons;
 
 // pause
 Button mainMenuButton;
@@ -66,6 +54,7 @@ final PVector velDownRight = new PVector(CAT_SPEED,CAT_SPEED);
 final PVector velDownLeft = new PVector(-CAT_SPEED,CAT_SPEED);
 final PVector velUpLeft = new PVector(-CAT_SPEED,-CAT_SPEED);
 
+// used for the color changing background
 float hueValue = 0;
 
 /*===DEFAULT OBJECTS===*/
@@ -73,39 +62,24 @@ Cat player1;
 Cat player2;
 
 /*===SPRITES===*/
-PImage defaultSprite;
+PImage defaultSprite, player1Sprite, player2Sprite, gun1Sprite, gun2Sprite, bullet1Sprite, bullet2Sprite;
 
-PImage player1Sprite;
-PImage player2Sprite;
-
-PImage gun1Sprite;
-PImage gun2Sprite;
-
-PImage bullet1Sprite;
-PImage bullet2Sprite;
-
-PImage mainMenuImage;
+PImage crownImage, mainMenuImage, player1GunSelectSprite, player2GunSelectSprite;
 
 // map images
-PImage noMapImage;
-PImage displayedMap;
-PImage map1Image;
-PImage map2Image;
-PImage map3Image;
-PImage map4Image;
-PImage map5Image;
-PImage map6Image;
-PImage map7Image;
-PImage map8Image;
-PImage map9Image;
-PImage map10Image;
+PImage noMapImage, displayedMap, map1Image, map2Image, map3Image, map4Image, map5Image, map6Image, map7Image, map8Image, map9Image, map10Image;
 
+// button images
+PImage backButtonImage, gameButtonImage;
 
 /*===WALL BUILDER===*/
 boolean wallBuilderActive = false;
 boolean mouseDown = false;
-PVector wallBuilderCorner1;
-PVector wallBuilderCorner2;
+PVector wallBuilderCorner1, wallBuilderCorner2;
+
+String mapSelectedPath = "map1.txt";
+String player1Gun = "gun1";
+String player2Gun = "gun1";
 
 
 /*===SETUP===*/
@@ -129,6 +103,8 @@ void setup() {
   // bullets
   bullet1Sprite = loadImage("sprites/bullet1.png");
   bullet2Sprite = loadImage("sprites/bullet2.png");
+  // crown
+  crownImage = loadImage("sprites/crown.png");
   // main menu
   mainMenuImage = loadImage("sprites/main_menu.png");
   // select screen
@@ -144,6 +120,11 @@ void setup() {
   map8Image = loadImage("sprites/maps/map8.png");
   map9Image = loadImage("sprites/maps/map9.png");
   map10Image = loadImage("sprites/maps/map10.png");
+  backButtonImage = loadImage("sprites/back_button.png");
+  gameButtonImage = loadImage("sprites/game_button.png");
+  
+  player1GunSelectSprite = gun1Sprite;
+  player2GunSelectSprite = gun1Sprite;
   
   // buttons
   playButton = new Button("playButton", 108, 149, 437, 342);
@@ -159,8 +140,8 @@ void setup() {
   map8Button = new Button("map8Button", 0, 0, 0, 0, map8Image);
   map9Button = new Button("map9Button", 0, 0, 0, 0, map9Image);
   map10Button = new Button("map10Button", 0, 0, 0, 0, map10Image);
-  Button[] mapButtons = new Button[] {map1Button,map2Button,map3Button,map4Button,map5Button,map6Button,map7Button,map8Button,map9Button,map10Button};
-  
+  mapButtons = new Button[] {map1Button,map2Button,map3Button,map4Button,map5Button,map6Button,map7Button,map8Button,map9Button,map10Button};
+
   for (int i = 0; i < mapButtons.length/2; i++) {
     mapButtons[i].top = 22*height/30;
     mapButtons[i].bottom = 25*height/30;
@@ -175,16 +156,15 @@ void setup() {
     mapButtons[i].left = 50 + (i-mapButtons.length/2)*200;
     mapButtons[i].right = mapButtons[i].left + 180;
   }
-  //player1Gun1Button;  //TODO: add gun buttons
-  //player1Gun2Button;
-  //player2Gun1Button;
-  //player2Gun2Button;
   
-  backButton = new Button("backButton", 10, 10, 50, 50, defaultSprite);
-  gameButton = new Button("gameButton", width-300, height-200, width-100, height-100, defaultSprite);
+  player2Gun1Button = new Button("player2Gun1Button", width-50, 300, width-200, 400, gun1Sprite);
+  player2Gun2Button = new Button("player2Gun2Button", width-50, 500, width-200, 600, gun2Sprite);
+  player1Gun1Button = new Button("player1Gun1Button", width-300, 300, width-450, 400, gun1Sprite);
+  player1Gun2Button = new Button("player1Gun2Button", width-300, 500, width-450, 600, gun2Sprite);
+  backButton = new Button("backButton", 10, 10, 50, 50, backButtonImage);
+  gameButton = new Button("gameButton", width-450, height-300, width-100, height-100, gameButtonImage);
 
-  //// pause
-  //mainMenuButton;  // idk what this is
+  resetGame();
   
   // default screen
   setScreen(0);
@@ -202,18 +182,12 @@ void setScreen(int newScreen) {
     case SELECT_SCREEN :
       // add map buttons, 
       buttons.add(backButton);
-      buttons.add(map1Button);
-      buttons.add(map2Button);
-      buttons.add(map3Button);
-      buttons.add(map4Button);
-      buttons.add(map5Button);
-      buttons.add(map6Button);
-      buttons.add(map7Button);
-      buttons.add(map8Button);
-      buttons.add(map9Button);
-      buttons.add(map10Button);
+      for (Button button : mapButtons) { buttons.add(button); }
       buttons.add(gameButton);
-
+      buttons.add(player1Gun1Button);
+      buttons.add(player1Gun2Button);
+      buttons.add(player2Gun1Button);
+      buttons.add(player2Gun2Button);
       break;
     case GAME_SCREEN :
       resetGame();
@@ -230,27 +204,41 @@ void resetGame() {
   // initialize players
   player1 = new Cat(width/3,height/2);  // starting location
   player1.sprite = player1Sprite;
+  player1.setGun(player1Gun);
   player2 = new Cat(2*width/3,height/2);
   player2.sprite = player2Sprite;
-  
+  player2.setGun(player2Gun);
+
   cats.add(player1);
   cats.add(player2);
   
   // initialize walls
-  loadMap("map1.txt");
+  loadMap(mapSelectedPath);
   
   if (!debugMode) { noStroke(); }
 }
 
 void tickGame() {
   updateColor();
+  handleWalls();
   handleCats();
   handleBullets();
-  handleWalls();
   handleWallBuilder();
   handleKeyboardMovement();
   displayHealthBars();
-  // TODO add ui updating (health and score and stuff)
+}
+
+void tickPaused() {
+  handleButtons();
+
+  pushStyle();
+  fill(100, 15);
+  rect(0,0,width,height);
+  fill(255);
+  textSize(200); 
+  textAlign(CENTER);
+  text("PAUSED",width/2,height/2);
+  popStyle();
 }
 
 void updateColor() {
@@ -291,30 +279,59 @@ void tickMainMenu() {
   popStyle();
 }
 
-void tickSelectScreen() {  // WORKING HERE
+void tickSelectScreen() {
   playButton.isHovered = false;
   updateColor();
   // logic for map button hovered over changes the pimage
   image(displayedMap,50,50,2*width/3,2*height/3);
-  if (map1Button.isHovered) { image(map1Image,50,50,2*width/3,2*height/3); }  // copy paste this
-  if (map2Button.isHovered) { image(map2Image,50,50,2*width/3,2*height/3); }  // copy paste this
-  if (map3Button.isHovered) { image(map3Image,50,50,2*width/3,2*height/3); }  // copy paste this
-  if (map4Button.isHovered) { image(map4Image,50,50,2*width/3,2*height/3); }  // copy paste this
-  if (map5Button.isHovered) { image(map5Image,50,50,2*width/3,2*height/3); }  // copy paste this
-  if (map6Button.isHovered) { image(map6Image,50,50,2*width/3,2*height/3); }  // copy paste this
-  if (map7Button.isHovered) { image(map7Image,50,50,2*width/3,2*height/3); }  // copy paste this
-  if (map8Button.isHovered) { image(map8Image,50,50,2*width/3,2*height/3); }  // copy paste this
-  if (map9Button.isHovered) { image(map9Image,50,50,2*width/3,2*height/3); }  // copy paste this
-  if (map10Button.isHovered) { image(map10Image,50,50,2*width/3,2*height/3); }  // copy paste this
+  if (map1Button.isHovered) { image(map1Image,50,50,2*width/3,2*height/3); }
+  if (map2Button.isHovered) { image(map2Image,50,50,2*width/3,2*height/3); }
+  if (map3Button.isHovered) { image(map3Image,50,50,2*width/3,2*height/3); }
+  if (map4Button.isHovered) { image(map4Image,50,50,2*width/3,2*height/3); }
+  if (map5Button.isHovered) { image(map5Image,50,50,2*width/3,2*height/3); }
+  if (map6Button.isHovered) { image(map6Image,50,50,2*width/3,2*height/3); }
+  if (map7Button.isHovered) { image(map7Image,50,50,2*width/3,2*height/3); }
+  if (map8Button.isHovered) { image(map8Image,50,50,2*width/3,2*height/3); }
+  if (map9Button.isHovered) { image(map9Image,50,50,2*width/3,2*height/3); }
+  if (map10Button.isHovered) { image(map10Image,50,50,2*width/3,2*height/3); }
+
 
   
-  handleButtons();
+  // gun select options
+  pushStyle();
+  imageMode(CORNERS);
+  rectMode(CORNERS);
 
+  image(player1Sprite, width-300, 50, width-450, 200);
+  image(player1GunSelectSprite, width-275, 100, width-400, 200);
+  fill(255,100,100);
+  rect(width-300, 300, width-450, 400);  //p1g1
+  rect(width-300, 500, width-450, 600);  //p1g2
+
+  image(player2Sprite, width-50, 50, width-200, 200);
+  image(player2GunSelectSprite, width-25, 100, width-150, 200);
+  fill(100,100,255);
+  rect(width-50, 300, width-200, 400);  //p2g1
+  rect(width-50, 500, width-200, 600);  //p2g2
+
+  popStyle();
+  
+  // hovered buttons have outlines
+  for (Button button : buttons) {
+    if (button.isHovered) {
+      pushStyle();
+      noFill();
+      stroke(255);
+      strokeWeight(10);
+      rectMode(CORNERS);
+      rect(button.left,button.top,button.right,button.bottom);
+      popStyle();
+    }
+  }
+  handleButtons();
 }
 
 void draw() {
-
-  // TODO add switch later for different screens
   switch (screen) {
     case MAIN_MENU_SCREEN :
       tickMainMenu();
@@ -323,7 +340,12 @@ void draw() {
       tickSelectScreen();
       break;
     case GAME_SCREEN :
-      tickGame();
+      if (! paused) {
+        tickGame();
+      }
+      else {
+        tickPaused();
+      }
       break;
   }
   if (debugMode) {
@@ -387,6 +409,12 @@ class Cat extends Entity {
       if (!debugMode) { noFill(); }
       rect(0,0,size.x,size.y);  // represents hitbox?
       image(sprite,0,0,size.x,size.y);
+      
+      // victory screen!
+      if (cats.size() == 1) {
+        // display crown
+        image(crownImage,0,-size.y/2, size.x, size.y);
+      }
   
       rotate(angle-0.15);
       image(gunSprite,75,25,100,50);
@@ -398,6 +426,17 @@ class Cat extends Entity {
 
     popMatrix();
     popStyle();
+    
+    if (cats.size() == 1) {
+      // victory text
+      int winner = (cats.get(0).equals(player1) ? 1 : 2);
+      fill(0);
+      textSize(30);
+      textAlign(CENTER);
+      text("Player " + winner + " wins!!!", width/2, height/3);
+      text("Press R to restart", width/2, height/2.5);
+
+    }
   }
   void shoot() {
     if (health > 0) {
@@ -409,19 +448,19 @@ class Cat extends Entity {
       }
     }
   }
-  void setGun(String gunName) {
+  void setGun(String gunName) {  // workhere
     switch (gunName) {
       case "gun1" :
         gunSprite = gun1Sprite;
-        reloadTime = 0.2;
+        reloadTime = 0.5;
         bulletName = "bullet1";
-        bulletBounces = 3;
+        bulletBounces = 15;
         break;
       case "gun2" :
         gunSprite = gun2Sprite;
-        reloadTime = 2;
+        reloadTime = 0.2;
         bulletName = "bullet2";
-        bulletBounces = 6;
+        bulletBounces = 12;
         break;
     }
   }
@@ -490,15 +529,15 @@ class Bullet extends Entity {
     switch (bulletName) {
       case "bullet1":
         vel.setMag(12);
-        damageAmount = 5;
-        bouncesLeft = 3;
+        damageAmount = 7;
+        bouncesLeft = 12;
         sprite = bullet1Sprite;
         size = new PVector(50,20);
         break;
       case "bullet2":
-        vel.setMag(300);
-        damageAmount = 10;
-        bouncesLeft = 6;
+        vel.setMag(30);
+        damageAmount = 2;
+        bouncesLeft = 18;
         sprite = bullet2Sprite;
         size = new PVector(100,20);
         break;
@@ -807,6 +846,11 @@ void keyPressed() {
       break;
     case ' ' :
       // TODO: ADD PAUSING
+      if (screen == GAME_SCREEN) {
+        buttons.clear();
+        buttons.add(backButton);
+        paused = (paused ? false : true);
+      }
       break;
     case '`' :
       debugMode = !debugMode;
@@ -820,7 +864,7 @@ void keyReleased() {
   setKeyPressed(key, false);
 }
 
-void setKeyPressed(char myKey, boolean isPressed) {  // SET CONTROLS HERE
+void setKeyPressed(char myKey, boolean isPressed) {  // SET CONTROLS HERE (keybinds)
   switch (myKey) {
     case 'w' :
       keys[0] = isPressed;
@@ -834,7 +878,7 @@ void setKeyPressed(char myKey, boolean isPressed) {  // SET CONTROLS HERE
     case 'd' :
       keys[3] = isPressed;
       break;
-    case 'x' :
+    case 'f' :
       keys[4] = isPressed;
       break;
     case 'i' :
@@ -849,7 +893,7 @@ void setKeyPressed(char myKey, boolean isPressed) {  // SET CONTROLS HERE
     case 'l' :
       keys[8] = isPressed;
       break;
-    case ',' :
+    case 'h' :
       keys[9] = isPressed;
       break;
     case 'e' :
@@ -891,18 +935,23 @@ void mousePressed() {
 
 void mouseReleased() {
   // press button
-  if (playButton.isHovered){ setScreen(SELECT_SCREEN); System.out.println("RAHHH"); }// workhere
+  if (playButton.isHovered){ setScreen(SELECT_SCREEN); } 
   if (backButton.isHovered){ setScreen(MAIN_MENU_SCREEN); }
-  if (map1Button.isHovered){ displayedMap = map1Image; }
-  if (map2Button.isHovered){ displayedMap = map2Image; }
-  if (map3Button.isHovered){ displayedMap = map3Image; }
-  if (map4Button.isHovered){ displayedMap = map4Image; }
-  if (map5Button.isHovered){ displayedMap = map5Image; }
-  if (map6Button.isHovered){ displayedMap = map6Image; }
-  if (map7Button.isHovered){ displayedMap = map7Image; }
-  if (map8Button.isHovered){ displayedMap = map8Image; }
-  if (map9Button.isHovered){ displayedMap = map9Image; }
-  if (map10Button.isHovered){ displayedMap = map10Image; }
+  if (map1Button.isHovered){ displayedMap = map1Image; mapSelectedPath = "map1.txt";}
+  if (map2Button.isHovered){ displayedMap = map2Image; mapSelectedPath = "map2.txt";}
+  if (map3Button.isHovered){ displayedMap = map3Image; mapSelectedPath = "map3.txt";}
+  if (map4Button.isHovered){ displayedMap = map4Image; mapSelectedPath = "map4.txt";}
+  if (map5Button.isHovered){ displayedMap = map5Image; mapSelectedPath = "map5.txt";}
+  if (map6Button.isHovered){ displayedMap = map6Image; mapSelectedPath = "map6.txt";}
+  if (map7Button.isHovered){ displayedMap = map7Image; mapSelectedPath = "map7.txt";}
+  if (map8Button.isHovered){ displayedMap = map8Image; mapSelectedPath = "map8.txt";}
+  if (map9Button.isHovered){ displayedMap = map9Image; mapSelectedPath = "map9.txt";}
+  if (map10Button.isHovered){ displayedMap = map10Image; mapSelectedPath = "map10.txt";}
+  if (player1Gun1Button.isHovered){ player1GunSelectSprite = gun1Sprite; player1Gun="gun1"; }
+  if (player1Gun2Button.isHovered){ player1GunSelectSprite = gun2Sprite; player1Gun="gun2"; }
+  if (player2Gun1Button.isHovered){ player2GunSelectSprite = gun1Sprite; player2Gun="gun1"; }
+  if (player2Gun2Button.isHovered){ player2GunSelectSprite = gun2Sprite; player2Gun="gun2"; }
+  if (gameButton.isHovered){ setScreen(GAME_SCREEN); }
 
   //if (! debugMode) {return;}
   //else { System.out.println("x"+mouseX+"/"+width + " y"+mouseY+"/"+height);}
@@ -956,31 +1005,12 @@ void loadMap(String mapFileName) {
 }
 
 /*
-5/13/25
-
-rewriting all these notes
-
-bare minimum
-shoot bullet, bullet hurts cat, cat dies
-gravity
-walls and platforms
-proper wall collision
-
-
-Plans:
-new classes: button, more walls like destructible walls, let cats build temporary walls, 
-map select screen with map previews when hover over
-main menu screen
-name input option
-character select screen
+6/12/24
+turning in project for apcsa
 */
 
 void printTests() {
-  
   System.out.println();
-  System.out.println(playButton.isHovered + " " + backButton.isHovered + " " + screen);
-  System.out.println(buttons);
-
 }
 
 void setupTest() {
