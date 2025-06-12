@@ -5,9 +5,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import processing.sound.*;
 
-SoundFile bgm;
-SoundFile gunshot;
-SoundFile buttonSound;
+SoundFile bgm, gunshot, buttonSound, death;
 
 /*===ARRAYLISTS===*/
 ArrayList<Cat> cats = new ArrayList<Cat>();
@@ -97,6 +95,7 @@ void setup() {
   // sounds
   bgm = new SoundFile(this, "audio/background1.mp3");
   buttonSound = new SoundFile(this, "audio/button.mp3");
+  death = new SoundFile(this, "audio/death.mp3");
   if (Math.random() < 0.25) {bgm = new SoundFile(this, "audio/background2.mp3");}
   gunshot = new SoundFile(this, "audio/gunshot.wav");
   bgm.loop();
@@ -724,7 +723,7 @@ class Button {
 /*===HANDLERS===*/
 void handleCats() {
   for (Cat cat : cats) {
-    if (cat.health <= 0) {catsToKill.add(cat);}
+    if (cat.health <= 0) {catsToKill.add(cat); death.play(); }
     if (cat.pos.y>height) {cat.applyForce(GRAVITY.copy().mult(-4));}  //TEST
 
     cat.onGround = false;
