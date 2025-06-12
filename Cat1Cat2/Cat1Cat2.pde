@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import processing.sound.*;
 
+
 SoundFile bgm, gunshot, buttonSound, death;
 
 /*===ARRAYLISTS===*/
